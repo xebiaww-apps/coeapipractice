@@ -1,0 +1,12 @@
+https://stackoverflow.com/questions/32035338/aws-api-gateway-convert-response-to-xml
+
+
+#set ($arr = ($input.path('$')))
+<responses>
+#foreach($c in $arr)
+<response>
+#foreach ($k in $c.keySet())
+<$k>$c.get($k)</$k>#end
+</response>
+#end
+</responses>

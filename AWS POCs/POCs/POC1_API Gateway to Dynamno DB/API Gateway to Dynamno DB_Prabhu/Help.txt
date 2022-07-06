@@ -1,0 +1,94 @@
+
+
+Create Role  ARN of an IAM role that grants API Gateway permissions 
+to invoke your integration.
+
+arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+
+API Gateway Input: DynamoDBCrudDemoHTTPAPI
+++++++++++++++++++++
+
+GetAllCustId:
+{
+   "input": "{\"action\": \"GetAllCustId\"}" 
+}
+
+GetByCustId:
+{
+   "input": "{ \"action\": \"GetByCustId\",\"customer_id\": \"John12345\" }" 
+}
+
+
+
+Update Customer:
+{
+"input" : "{
+  \"action\": \"Update\",
+  \"customer_id\": \"URN123\",
+  \"customer_name\": \"URN\",
+  \"customer_status\": \"Active\"
+}"
+}
+
+=========================================================
+Step Function:  DynamoDBCrudDemoExpress
+++++++++++++++
+
+Create:
+{
+    "action": "Put",
+    "customer_id": "test1234",
+    "customer_name": "testing",
+    "customer_status": "Inactive"
+}
+
+Delete:
+{
+  "action": "Delete",
+  "customer_id": "test1234"
+}
+
+GET by customer_id:
+{
+  "action": "GetByCustId",
+  "customer_id": "test1234"
+}
+
+
+GET ALL customer_id:
+{
+  "action": "GetAllCustId"
+}
+
+Update using customer_id:
+{
+  "action": "Update",
+  "customer_id": "Prabhu45",
+  "customer_name": "value2",
+  "customer_status": "Inactive" 
+}
+
+===========================================
+IAM Role name: StepFunctions-DynamoDBCrudDemoExpress-role-08c36a7f
+Attach Policy:  AWSStepFunctionsFullAccessPolicy
+                AWSLambda_FullAccess
+
+
+===========================================
+lambda function:
+++++++++++++++
+
+getAllCustomersStatusDB
+getStatusByCustomerIdDB
+createCustomerStatusDB
+deleteCustomerStatusDB
+updateCustomerStatusDB
+
+=============================================
+
+Table: CUSTOMER_PROFILE_MGMT
+
+=============================================
+
+API Gateway:

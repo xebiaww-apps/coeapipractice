@@ -1,0 +1,205 @@
+
+====================================================
+Step Functions:
+
+ExpressMyStateMachine:
+ARN: arn:aws:states:us-west-1:644032760753:stateMachine:ExpressMyStateMachine
+IAM Role for ARN: arn:aws:iam::644032760753:role/service-role/StepFunctions-ExpressMyStateMachine-role-9a335f94 
+
+Definition:
+{
+  "Comment": "Customer Profile Creation example",
+  "StartAt": "Pass",
+  "States": {
+    "Pass": {
+      "Comment": "Receive input from the step function work flow",
+      "Type": "Pass",
+      "Next": "CustomerProfileManagement?"
+    },
+    "CustomerProfileManagement?": {
+      "Comment": "Performs create, update, read",
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.input",
+		  "StringEquals": "create",
+		  "Next": "create_customer_profile"
+        },
+        {
+          "Variable": "$.input",
+		  "StringEquals": "update",
+		  "Next": "update_customer_profile"
+        }
+      ],
+      "Default": "read_customer_profile"
+    },
+	
+	"create_customer_profile": {
+    "Type" : "Task",
+    "Resource": "arn:aws:lambda:us-west-1:644032760753:function:create_customer_profile",
+    "End": true
+    },
+	"update_customer_profile": {
+    "Type" : "Task",
+    "Resource": "arn:aws:lambda:us-west-1:644032760753:function:update_customer_profile",
+    "End": true
+    },
+	"read_customer_profile": {
+    "Type" : "Task",
+    "Resource": "arn:aws:lambda:us-west-1:644032760753:function:read_customer_profile",
+    "End": true
+    }
+  }
+}
+
+Cloudwatch log:
+
+Enter existing log group ARN.
+arn:aws:logs:us-west-1:644032760753:log-group:/aws/vendedlogs/states/ExpressMyStateMachine-Logs:*
+============================================
+================================
+==============================
+
+Lambda function:
+
+update_customer_profile
+------------
+import json
+import urllib
+#import boto
+import datetime
+
+def lambda_handler(event, context):
+    # TODO implement
+    print(event)
+    
+    response={}
+    response["statusCode"] = 200
+    response["timeStamp"] = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    response["body"] = "Hello from update_customer_profile!"
+    return response
+----------------
+
+ARN: arn:aws:lambda:us-west-1:644032760753:function:update_customer_profile
+
+=================================================================
+
+Create_Customer_profile:
+
+
+ARN: arn:aws:lambda:us-west-1:644032760753:function:create_customer_profile
+
+----
+import json
+
+def lambda_handler(event, context):
+    # TODO implement
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Hello from create_customer_profile!')
+    }
+-----------
+
+=============================================
+=============================================
+
+read_customer_profile:
+
+def lambda_handler(event, context):
+    # TODO implement
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Hello from read_customer_profile!')
+    }
+
+
+ArN: arn:aws:lambda:us-west-1:644032760753:function:read_customer_profile
+
+============================================
+
+Input:
+
+{
+    "input": "update" 
+}
+
+
+{
+  "statusCode": 200,
+  "body": "\"Hello from update_customer_profile!\""
+}
+=========================
+==================================
+2. Create the IAM Role for your API
+
+Create the below role:
+APIGatewayToStepFunctions:
+arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+Attach the policy by selecting: "AWSStepFunctionsFullAccess" to the above role.
+arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+
+
+===========================
+3. API Gateway
+
+customerAPI (1jh4vudtpf)
+
+REST API -> Build
+Integration Type: AWS Service
+AWS Service: Step Functions
+HTTP method: POST
+Action Type: Use action name
+Action: StartExecution
+Role: arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+
+create resource
+/custprofile
+
+https://1jh4vudtpf.execute-api.us-west-1.amazonaws.com/dev/custprofile
+
+===========================
+4. Deploy API
+
+Rest API client:
+https://reqbin.com/?msclkid=9cac7921bece11ecb07023173180d98e
+
+Request:
+https://1jh4vudtpf.execute-api.us-west-1.amazonaws.com/dev/custprofile
+POST Method
+
+{
+   "input": "{\"input\" : \"update\"}",
+   "stateMachineArn": "arn:aws:states:us-west-1:644032760753:stateMachine:MyStateMachine"
+}
+
+
+{
+   "input": "update",
+   "stateMachineArn": "arn:aws:states:us-west-1:644032760753:stateMachine:MyStateMachine"
+}
+
+Response:
+
+HTTP/1.1 200 OK
+Date: Thu, 14 Apr 2022 16:24:17 GMT
+Content-Type: application/json
+Content-Length: 147
+Connection: keep-alive
+x-amzn-RequestId: ff38f229-c223-4890-9d5d-801308314497
+x-amz-apigw-id: QlCbrEgGSK4FQbQ=
+X-Amzn-Trace-Id: Root=1-62584ab0-744d47140652b59c331c1952
+
+{"executionArn":"arn:aws:states:us-west-1:644032760753:execution:MyStateMachine:18ded990-a638-444a-b605-76dad8efa72d","startDate":1.649953456995E9}
+
+
+========================================
+customer_profile (POST) resouse id in body 
+update_customer_profile (PUT)  resouse id in the uri
+read_customer_profile (GET) resouse id in the uri
+
+
+======================================================
+
+

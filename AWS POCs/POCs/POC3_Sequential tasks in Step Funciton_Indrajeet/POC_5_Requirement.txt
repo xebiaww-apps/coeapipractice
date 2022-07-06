@@ -1,0 +1,42 @@
+POC 4:
+
+
+API gateway: (http type gateway)
+
+
+
+POSt method
+{
+cust id, name, city, state, phone no, email
+}
+
+
+
+========================
+Step function (Express work flow)
+
+
+
+ 1) task 1
+Invoke a lambda funciton (get) -> DyanamoDB (id) -> table 1 (cust id )
+If success,
+returns cust id
+else
+return null(not exist)
+
+2) task 2 (receives cust id from task 1)
+If above task 1 is success
+In task 2, invoke a lambda function to dynamo table 2 "address table"
+(cust id, name, city, state)
+
+3) task 3 (receives cust id from task 2)
+if task 2 is success,
+Execute this task 3. Invoke dynamoDB table 3 "Contact table"
+( cust id, phone no, email).
+
+
+
+===================
+Table 1 - cust id (Cust ids)
+Table 2 - address (cust id, name, city, state)
+Table 3 - contact (cust id, phone no, email)

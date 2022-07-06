@@ -1,0 +1,145 @@
+
+https://us-west-1.console.aws.amazon.com/lambda/home?region=us-west-1#/functions
+
+https://www.semicolonworld.com/question/78392/how-to-invoke-an-aws-step-function-using-api-gateway?msclkid=f85cd6f7bbfa11ecb2a527bf0fc03dbd
+
+https://stackoverflow.com/questions/56639633/value-null-at-statemachinearn-failed-to-satisfy-constraint-member-must-not-be?msclkid=bb095b5abc0111ec95d0a81967cf4ab4
+
+
+Step Functions:
+
+MyStateMachine:
+
+Code:
+============================
+{
+  "Comment": "This is your state machine",
+  "StartAt": "LamdaInvoke",
+  "States": {
+    "LamdaInvoke": {
+      "Comment": "Receive input from the step function work flow",
+      "Type": "Task",
+	  "Resource": "arn:aws:states:::lamda:invoke",
+      "OutputPath": "$.Payload",
+	  "Parameters" :  {
+	  "Payload.$" : "$",
+	  "FunctionName" : "arn:aws:lambda:us-west-1:644032760753:function:LamdaInvokeTest:$LATEST"
+        },
+     "Retry": [
+        {
+          "ErrorEquals": [ "Lambda.ServiceException","Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+        "IntervalSeconds" : 4,
+		"MaxAttempts" : 6,
+		"BackoffRate" : 2
+	    }
+	],
+	"End" : true
+  }
+  }
+}
+
+==============================
+Create new IAM role for Lambda
+arn:aws:iam::644032760753:role/service-role/StepFunctions-LamdaInvokeStateMachine-role-6c955082
+
+==============
+Input:
+
+{
+    "input": "update" 
+}
+
+
+{
+  "statusCode": 200,
+  "body": "\"Hello from update_customer_profile!\""
+}
+=========================
+==================================
+2. Create the IAM Role for your API
+
+Create the below role:
+APIGatewayToStepFunctions:
+arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+Attach the policy by selecting: "AWSStepFunctionsFullAccess" to the above role.
+arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+
+
+===========================
+3. API Gateway
+
+Integration Request
+
+REST API -> Build
+Integration Type: AWS Service
+AWS region: us-west-1
+AWS Service: Step Functions
+HTTP method: POST
+Action Type: Use action name
+Action: StartSyncExecution
+Role: arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+mapping template:
+{
+    "input": "$util.escapeJavaScript($input.json('$'))",
+    "stateMachineArn": "arn:aws:states:us-west-1:644032760753:stateMachine:LamdaInvokeStateMachine"
+} 
+
+Integration Response:
+mapping template:
+#set ($parsedPayload = $util.parseJson($input.json('$.output')))
+$parsedPayload
+
+
+
+===========================
+4. Deploy API
+
+Rest API client:
+https://reqbin.com/?msclkid=9cac7921bece11ecb07023173180d98e
+
+Request:
+https://1jh4vudtpf.execute-api.us-west-1.amazonaws.com/dev/custprofile
+POST Method
+
+{
+   "input": "{\"input\" : \"update\"}"
+}
+
+
+============
+==================
+
+===================
+========================
+============================
+arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+arn:partition:apigateway:us-west-1::/apis/p80bz9kjv4/integrations
+
+arn:aws:lambda:us-west-1:644032760753:function:update_customer_profile
+arn:partition:apigateway:region::/apis/api-id/integrations/integration-id
+arn:partition:apigateway:us-west-1::/apis/p80bz9kjv4/integrations/ek1j4t7
+
+http api
+https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop.html
+
+
+$request.body.stateMachineArn
+$request.body.input
+$request.body.traceHeader
+$request.body.name
+
+{
+   "input": "{\"input\" : \"update\"}",
+   "name": "string",
+   "stateMachineArn": "arn:aws:states:us-west-1:644032760753:stateMachine:ExpressMyStateMachine",
+   "traceHeader": "string"
+}
+
+
+Invocation Role:
+arn:aws:iam::644032760753:role/APIGatewayToStepFunctions
+
+Logs(Success logs):
+https://us-west-1.console.aws.amazon.com/cloudwatch/home?region=us-west-1#logsV2:log-groups/log-group/$252Faws$252Fvendedlogs$252Fstates$252FExpressMyStateMachine-Logs/log-events/states$252FExpressMyStateMachine$252F2022-04-21-08-10$252F1db5b632

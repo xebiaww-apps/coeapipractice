@@ -1,0 +1,256 @@
+
+AWSOnlineTechTalks (You tube)
+
+1) Reference youtube:
+   https://www.youtube.com/watch?v=QBBewrKR1qg
+
+   SAM templates
+   AWS SAM is build on top of AWS cloud information
+   
+2) Deploy lambda, ApI gateway with SAM.
+   https://www.youtube.com/watch?v=tA9IIGR6XFo&t=309s
+   
+
+Prerequites:
+Install SAM CLI and configure
+
+Go the Directory Congigured in VS code.
+1) mkdir sam-demo
+2) cd sam-demo
+
+=============================================================================
+PS C:\Prabhu\AWS_SAM\sam-demo> sam init
+
+You can preselect a particular runtime or package type when using the `sam init` experience.
+Call `sam init --help` to learn more.
+
+Which template source would you like to use?
+        1 - AWS Quick Start Templates       
+        2 - Custom Template Location        
+Choice: 1
+
+Choose an AWS Quick Start application template
+        1 - Hello World Example
+        2 - Multi-step workflow
+        3 - Serverless API
+        4 - Scheduled task
+        5 - Standalone function
+        6 - Data processing
+        7 - Infrastructure event management
+        8 - Machine Learning
+Template: 1
+
+Use the most popular runtime and package type? (Python and zip) [y/N]: y
+
+Would you like to enable X-Ray tracing on the function(s) in your application?  [y/N]: y
+X-Ray will incur an additional cost. View https://aws.amazon.com/xray/pricing/ for more details
+
+Project name [sam-app]: javahome-app
+
+Cloning from https://github.com/aws/aws-sam-cli-app-templates (process may take a moment)
+
+    -----------------------
+    Generating application:
+    -----------------------
+    Name: javahome-app
+    Runtime: python3.9
+    Architectures: x86_64
+    Dependency Manager: pip
+    Application Template: hello-world
+    Output Directory: .
+
+    Next steps can be found in the README file at ./javahome-app/README.md
+
+
+    Commands you can use next
+    =========================
+    [*] Create pipeline: cd javahome-app && sam pipeline init --bootstrap
+    [*] Validate SAM template: sam validate
+    [*] Test Function in the Cloud: sam sync --stack-name {stack-name} --watch
+
+
+========================================================
+
+PS C:\Prabhu\AWS_SAM\sam-demo\javahome-app> sam build
+Your template contains a resource with logical ID "ServerlessRestApi", which is a reserved logical ID in AWS SAM. It could result in unexpected behaviors and is not recommended.
+Building codeuri: C:\Prabhu\AWS_SAM\sam-demo\javahome-app\hello_world runtime: python3.9 metadata: {} architecture: x86_64 functions: ['HelloWorldFunction']
+Running PythonPipBuilder:ResolveDependencies
+Running PythonPipBuilder:CopySource
+
+Build Succeeded
+
+Built Artifacts  : .aws-sam\build
+Built Template   : .aws-sam\build\template.yaml
+
+Commands you can use next
+=========================
+[*] Validate SAM template: sam validate        
+[*] Invoke Function: sam local invoke
+[*] Test Function in the Cloud: sam sync --stack-name {stack-name} --watch
+[*] Deploy: sam deploy --guided
+
+
+====================================================
+
+PS C:\Prabhu\AWS_SAM\sam-demo\javahome-app> sam deploy --guided
+
+Configuring SAM deploy
+======================
+
+        Looking for config file [samconfig.toml] :  Not found
+
+        Setting default arguments for 'sam deploy'
+        =========================================
+        Stack Name [sam-app]: javahome-app
+        AWS Region [ap-south-1]: ap-south-1
+        #Shows you resources changes to be deployed and require a 'Y' to initiate deploy
+        Confirm changes before deploy [y/N]: y
+        #SAM needs permission to be able to create roles to connect to the resources in your template
+        Allow SAM CLI IAM role creation [Y/n]: y
+        #Preserves the state of previously provisioned resources when an operation fails
+        Disable rollback [y/N]: n
+        HelloWorldFunction may not have authorization defined, Is this okay? [y/N]: y
+        Save arguments to configuration file [Y/n]: y
+        SAM configuration file [samconfig.toml]: y
+        SAM configuration environment [default]: y
+
+        Looking for resources needed for deployment:
+         Managed S3 bucket: aws-sam-cli-managed-default-samclisourcebucket-10oknv41nby5q
+         A different default S3 bucket can be set in samconfig.toml
+
+        Saved arguments to config file
+        Running 'sam deploy' for future deployments will use the parameters saved above.
+        The above parameters can be changed by modifying samconfig.toml
+        Learn more about samconfig.toml syntax at
+        https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+
+Uploading to javahome-app/3350a55a37dc0690f0e625754a1a65fe  458549 / 458549  (100.00%)
+
+        Deploying with following values
+        ===============================
+        Stack name                   : javahome-app
+        Region                       : ap-south-1
+        Confirm changeset            : True
+        Disable rollback             : False
+        Deployment s3 bucket         : aws-sam-cli-managed-default-samclisourcebucket-10oknv41nby5q
+        Capabilities                 : ["CAPABILITY_IAM"]
+        Parameter overrides          : {}
+        Signing Profiles             : {}
+
+Initiating deployment
+=====================
+Uploading to javahome-app/5fccd2cd2f6aa21d6d30ca1ea224d83a.template  1260 / 1260  (100.00%)
+
+Waiting for changeset to be created..
+
+CloudFormation stack changeset
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Operation                                              LogicalResourceId                                      ResourceType                                           Replacement
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
++ Add                                                  HelloWorldFunctionHelloWorldPermissionProd             AWS::Lambda::Permission                                N/A
++ Add                                                  HelloWorldFunctionRole                                 AWS::IAM::Role                                         N/A
++ Add                                                  HelloWorldFunction                                     AWS::Lambda::Function                                  N/A
++ Add                                                  ServerlessRestApiDeployment47fc2d5f9d                  AWS::ApiGateway::Deployment                            N/A
++ Add                                                  ServerlessRestApiProdStage                             AWS::ApiGateway::Stage                                 N/A
++ Add                                                  ServerlessRestApi                                      AWS::ApiGateway::RestApi                               N/A
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+
+Changeset created successfully. arn:aws:cloudformation:ap-south-1:150097413076:changeSet/samcli-deploy1655194261/a7b56c52-bb00-4b4f-8531-91ae429b5638
+
+
+Previewing CloudFormation changeset before deployment
+======================================================
+Deploy this changeset? [y/N]: y
+
+2022-06-14 13:41:13 - Waiting for stack create/update to complete
+
+CloudFormation events from stack operations
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ResourceStatus                                         ResourceType                                           LogicalResourceId                                      ResourceStatusReason
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+CREATE_IN_PROGRESS                                     AWS::IAM::Role                                         HelloWorldFunctionRole                                 -
+CREATE_IN_PROGRESS                                     AWS::IAM::Role                                         HelloWorldFunctionRole                                 Resource creation Initiated
+CREATE_COMPLETE                                        AWS::IAM::Role                                         HelloWorldFunctionRole                                 -
+CREATE_IN_PROGRESS                                     AWS::Lambda::Function                                  HelloWorldFunction                                     -
+CREATE_IN_PROGRESS                                     AWS::Lambda::Function                                  HelloWorldFunction                                     Resource creation Initiated
+CREATE_COMPLETE                                        AWS::Lambda::Function                                  HelloWorldFunction                                     -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::RestApi                               ServerlessRestApi                                      -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::RestApi                               ServerlessRestApi                                      Resource creation Initiated
+CREATE_COMPLETE                                        AWS::ApiGateway::RestApi                               ServerlessRestApi                                      -
+CREATE_IN_PROGRESS                                     AWS::Lambda::Permission                                HelloWorldFunctionHelloWorldPermissionProd             Resource creation Initiated
+CREATE_IN_PROGRESS                                     AWS::Lambda::Permission                                HelloWorldFunctionHelloWorldPermissionProd             -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::Deployment                            ServerlessRestApiDeployment47fc2d5f9d                  -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::Deployment                            ServerlessRestApiDeployment47fc2d5f9d                  Resource creation Initiated
+CREATE_COMPLETE                                        AWS::ApiGateway::Deployment                            ServerlessRestApiDeployment47fc2d5f9d                  -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::Stage                                 ServerlessRestApiProdStage                             -
+CREATE_IN_PROGRESS                                     AWS::ApiGateway::Stage                                 ServerlessRestApiProdStage                             Resource creation Initiated
+CREATE_COMPLETE                                        AWS::ApiGateway::Stage                                 ServerlessRestApiProdStage                             -
+CREATE_COMPLETE                                        AWS::Lambda::Permission                                HelloWorldFunctionHelloWorldPermissionProd             -
+CREATE_COMPLETE                                        AWS::CloudFormation::Stack                             javahome-app                                           -
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CloudFormation outputs from deployed stack
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Outputs
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   
+Key                 HelloWorldFunctionIamRole
+Description         Implicit IAM Role created for Hello World function
+Value               arn:aws:iam::150097413076:role/javahome-app-HelloWorldFunctionRole-1G5AOIXQ4R66C
+
+Key                 HelloWorldApi
+Description         API Gateway endpoint URL for Prod stage for Hello World function
+Value               https://gyw4nc6c0g.execute-api.ap-south-1.amazonaws.com/Prod/hello/
+
+Key                 HelloWorldFunction
+Description         Hello World Lambda Function ARN
+Value               arn:aws:lambda:ap-south-1:150097413076:function:javahome-app-HelloWorldFunction-502ifez5wy5m
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------   one
+
+Successfully created/updated stack - javahome-app in ap-south-1
+
+PS C:\Prabhu\AWS_SAM\sam-demo\javahome-app> 
+
+=========================================================================================================================
+
+PS C:\Prabhu\AWS_SAM\sam-demo\javahome-app> sam local invoke
+Invoking app.lambda_handler (python3.9)
+Skip pulling image and use local one: public.ecr.aws/sam/emulation-python3.9:rapid-1.50.0-x86_64.
+
+Mounting C:\Prabhu\AWS_SAM\sam-demo\javahome-app\.aws-sam\build\HelloWorldFunction as /var/task:ro,delegated inside runtime container
+START RequestId: dcb0cdf3-1a7f-48de-b5cb-23efb8f2cb92 Version: $LATEST
+END RequestId: dcb0cdf3-1a7f-48de-b5cb-23efb8f2cb92
+REPORT RequestId: dcb0cdf3-1a7f-48de-b5cb-23efb8f2cb92  Init Duration: 0.31 ms  Duration: 439.95 ms     Billed Duration: 440 ms    Memory Size: 128 MB     Max Memory Used: 128 MB
+{"statusCode": 200, "body": "{\"message\": \"hello world Prabhu\"}"}
+
+=========================================================================
+
+Import external dependecny.
+
+1) uncomment "import requests"
+
+2) and add try catch block:
+ 
+  try:
+        ip= requests.get("http://checkip.amazonaws.com/")
+    except requests.RequestException as e:
+        print (e)
+        raise e
+		
+=======================================================================
+Error faced:
+Import "requests" could not be resolved from sourcec
+
+
+Solution:
+   Go to the python installation directory
+   Default Directory:
+	   open cmd
+	   cd C:\Users\Prabhu.Selvaraj\AppData\Local\Programs\Python\Python39\Scripts
+		pip install lxml"
+		pip install requests
+		pip install pytest-xdist
+	   Execute these commands
+   Set "C:\Users\Prabhu.Selvaraj\AppData\Local\Programs\Python\Python39\Scripts" in the PATH variable.
+   Restart the VS code.
+====================================================================================
+   

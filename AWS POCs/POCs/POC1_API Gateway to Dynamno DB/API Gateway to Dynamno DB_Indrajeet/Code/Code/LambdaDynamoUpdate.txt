@@ -1,0 +1,16 @@
+import boto3
+
+def lambda_handler(event, context):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb .Table("Customer")
+    id = event['Id']
+    name = event['StudentName']
+    try:
+	    response= table.update_item(Key={"Id":id},
+	    UpdateExpression="SET StudentName= :s",
+	    ExpressionAttributeValues={':s':name},
+	    ReturnValues="UPDATED_NEW")
+	    print(response['Attributes'])
+	    return "Done"
+    except:
+	    raise

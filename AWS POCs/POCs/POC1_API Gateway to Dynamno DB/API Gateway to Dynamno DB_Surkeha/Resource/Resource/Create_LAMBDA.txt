@@ -1,0 +1,21 @@
+LAMBDA Code to CREATE a record by ID:
+
+import json
+import boto3
+
+def lambda_handler(event, context):
+    # TODO implement
+    client_dynamo=boto3.resource('dynamodb')
+    table=client_dynamo.Table('http-crud-tutorial-items')
+    try:
+        response=table.put_item(Item=event)
+        return "Done"
+    except:
+        raise
+		
+Test Event Configuration:
+{
+  "id": "xebia14",
+  "price": 12345,
+  "name": "xebia10"
+}

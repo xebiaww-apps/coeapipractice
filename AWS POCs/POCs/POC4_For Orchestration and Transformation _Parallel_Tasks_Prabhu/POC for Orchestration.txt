@@ -1,0 +1,181 @@
+
+
+API Gateway: CurrencyDetailsAndPopulationHttpAPI  
+
+===================================================
+
+CurrencyDetailsAndPopulationApI.
+
+{
+  "currencies": [
+    "AED",
+    "AOA"
+  ],
+  "USPopulation": [
+    "2019",
+    "2016"
+  ]
+}
+
+
+{
+   "input": "{  \"currencies\": [    \"AED\",    \"AOA\"  ],
+                \"USPopulation\": [    \"2019\",    \"2016\"  ]
+}}
+
+
+
+=========================
+Lambda Event Input.
+[
+    "INR",
+    "USD"
+]
+
+[
+    "2019",
+    "2016"
+]
+
+=================================================
+State Function Input:
+Combined input in StateFunction:
+
+{
+  "currencies": [   "INR",    "USD"  ],
+  "USPopulationYear": [ "2019", "2016" ]
+}
+
+===================================================
+API Gateway Input:
+
+Combined output
+{
+  "input": {  "currencies": [   "INR",    "USD"  ],
+              "USPopulationYear": [ "2019", "2016" ]}
+}
+
+
+=========================================================
+
+Working Code:
+
+===================================
+import json
+import http.client
+
+def lambda_handler(event, context):
+    connection = http.client.HTTPSConnection('datausa.io')
+    connection.request('GET', '/api/data?drilldowns=Nation&measures=Population')
+    response = connection.getresponse()
+    output = json.loads(response.read())
+    #print(output)
+    
+    #print(event['currencies'])
+    USPopulationYear = event['USPopulationYear']
+    
+    #USPopulationYear = ["2019","2016"]
+    #print(USPopulationYear)
+    
+    desiredOutput1=[]
+        
+    for k in output['data']:
+        for y in USPopulationYear:
+            if k['Year'] == y: 
+                desiredOutput={}
+                desiredOutput['Year'] = str(k['Year'])
+                desiredOutput['Nation'] = str(k['Nation'])
+                desiredOutput['Population'] = str(k['Population'])
+                desiredOutput1.append(desiredOutput)
+    
+    json_list = json.dumps(desiredOutput1)
+    print(json_list)
+    
+    return json_list  
+==================================================
+Create IAM role for the step funciton to access lambda.
+
+Create an IAM role "arn:aws:sts::644032760753:assumed-role/
+   StepFunctions-CurrencyDetailsAndPopulationApI-role-6d4b7183" 
+
+attach AWSLambda_FullAccess Policy
+==========================================================
+
+for loop iterations:
+https://stackoverflow.com/questions/34818782/iterate-through-nested-json-object-and-get-values-with-python
+
+=======================================================
+
+Step Function Express code:  CurrencyDetailsAndPopulationExpressAPI
+
+{
+  "Comment": "Receive Input from the Client to get Currency and US Population Details",
+  "StartAt": "Pass",
+  "States": {
+    "Pass": {
+      "Type": "Pass",
+      "Comment": "Receive input from API Gateway",
+      "Next": "Parallel"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "Pass (1)",
+      "Branches": [
+        {
+          "StartAt": "GetCurrencyDetailsFunction",
+          "States": {
+            "GetCurrencyDetailsFunction": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:us-west-1:644032760753:function:GetCurrencyDetailsFunction",
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "BackoffRate": 1,
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 2
+                }
+              ],
+              "End": true,
+              "InputPath": "$.currencies"
+            }
+          }
+        },
+        {
+          "StartAt": "USPopulationYearFunction",
+          "States": {
+            "USPopulationYearFunction": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:us-west-1:644032760753:function:USPopulationYearFunction",
+              "End": true,
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "BackoffRate": 1,
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 2
+                }
+              ],
+              "InputPath": "$.USPopulationYear"
+            }
+          }
+        }
+      ]
+    },
+    "Pass (1)": {
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}
+
+============================
+
+Integration Request:
+{
+    "input": "$util.escapeJavaScript($input.json('$'))",
+    "stateMachineArn": "arn:aws:states:us-west-1:644032760753:stateMachine:executionArn"
+}

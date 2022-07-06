@@ -1,0 +1,11 @@
+import boto3
+
+def lambda_handler(event, context)
+    var1 = boto3.resource(dynamodb)
+    table = var1.Table(Customer)
+    var2 = table.scan()['Items']
+    demo_list = 
+    for a in var2
+        demo_list += a['StudentName'] + , 
+    print(demo_list)
+    return var2
