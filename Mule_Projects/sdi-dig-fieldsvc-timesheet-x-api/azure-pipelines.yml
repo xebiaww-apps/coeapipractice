@@ -1,0 +1,23 @@
+trigger:
+  - develop
+
+parameters:
+- name: deployToCI
+  displayName: Deploy to CI?
+  type: boolean
+  default: false
+
+variables:
+- group: DEV1-SDI-ANYPOINT
+
+jobs:
+- template: mule/standalone-app-build-deploy.yml@templates
+  parameters:
+    deployToEnvironment: ${{ parameters.deployToCI }}
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: SDI-API-MuleSoft/sdi-azure-pipeline-templates
+    ref: feature/icc-288-foundation
