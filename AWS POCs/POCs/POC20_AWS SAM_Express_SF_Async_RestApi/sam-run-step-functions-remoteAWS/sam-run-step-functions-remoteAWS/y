@@ -1,0 +1,23 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "remoteaws"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-10oknv41nby5q"
+s3_prefix = "remoteaws"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+
+[y]
+[y.deploy]
+[y.deploy.parameters]
+stack_name = "remoteaws"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-10oknv41nby5q"
+s3_prefix = "remoteaws"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+disable_rollback = true

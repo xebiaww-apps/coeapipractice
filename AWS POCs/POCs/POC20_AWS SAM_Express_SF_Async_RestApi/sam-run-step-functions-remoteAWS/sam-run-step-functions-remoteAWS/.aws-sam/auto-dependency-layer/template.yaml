@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'javahome-app Sample SAM Template for javahome-app
+
+  '
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+  SAMLogs:
+    Type: AWS::Logs::LogGroup
+  ValidationStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: ..\..\statemachine\stateMachine.asl.json
+      DefinitionSubstitutions:
+        HelloFromLocalStepFunctionArn:
+          Fn::GetAtt:
+          - HelloFromLocalStepFunction
+          - Arn
+      Events:
+        ValidationApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /hello
+            RestApiId:
+              Ref: MyApi
+      Logging:
+        Destinations:
+        - CloudWatchLogsLogGroup:
+            LogGroupArn:
+              Fn::GetAtt:
+              - SAMLogs
+              - Arn
+        IncludeExecutionData: true
+        Level: ALL
+      Policies:
+      - LambdaInvokePolicy:
+          FunctionName:
+            Ref: HelloFromLocalStepFunction
+      - CloudWatchLogsFullAccess
+  HelloFromLocalStepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: HelloFromLocalStepFunction
+      Handler: helloWorld.lambda_handler
+      Runtime: python3.9
+      Layers:
+      - Fn::GetAtt:
+        - AwsSamAutoDependencyLayerNestedStack
+        - Outputs.HelloFromLocalStepFunctionce095132DepLayer
+    Metadata:
+      SamResourceId: HelloFromLocalStepFunction
+  AwsSamAutoDependencyLayerNestedStack:
+    DeletionPolicy: Delete
+    Metadata:
+      CreatedBy: AWS SAM CLI sync command
+    Properties:
+      TemplateURL: C:\Prabhu\AWS_SAM\sam-run-step-functions-remoteAWS\.aws-sam\auto-dependency-layer\nested_template.yaml
+    Type: AWS::CloudFormation::Stack
+Outputs:
+  ValidationStateMachineArn:
+    Description: fdf
+    Value:
+      Ref: ValidationStateMachine
+  HelloAPIUrl:
+    Description: fdf
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/dev/

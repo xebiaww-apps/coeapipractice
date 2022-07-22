@@ -1,0 +1,10 @@
+
+Problem Statement:
+------------------------
+AWS SAM:  (Customer profile management)
+Step 1: API gateway -> lambda -> Dynambo DB (Create, Delete, update)
+Step 2: If I Update the Dynamob db table from backend. Triggers an event that will trigger SNS(email) and publish.
+Step 3: Whoever subscribes that email will consume the event
+
+
+

@@ -1,0 +1,11 @@
+{
+    "StartAt": "HelloSF",
+    "Comment": "Run the HelloWorld Lambda",
+    "States" :{
+        "HelloSF": {
+            "Type" : "Task",
+            "Resource" : "${HelloFromLocalStepFunctionArn}",
+            "End" : true
+        }
+    }
+}

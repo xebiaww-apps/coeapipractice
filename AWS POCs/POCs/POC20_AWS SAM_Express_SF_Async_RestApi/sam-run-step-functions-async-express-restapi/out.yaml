@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'javahome-app Sample SAM Template for javahome-app
+
+  '
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+    Metadata:
+      SamResourceId: MyApi
+  SAMLogs:
+    Type: AWS::Logs::LogGroup
+    Metadata:
+      SamResourceId: SAMLogs
+  HelloStepFunctionExpressSync:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      Tracing:
+        Enabled: true
+      DefinitionUri:
+        Bucket: my-regional-bucket
+        Key: 9af96561633aeb5a161e147c95380538
+      DefinitionSubstitutions:
+        HelloFromLocalStepFunctionArn:
+          Fn::GetAtt:
+          - HelloFromLocalStepFunction
+          - Arn
+      Policies:
+      - LambdaInvokePolicy:
+          FunctionName:
+            Ref: HelloFromLocalStepFunction
+      - CloudWatchLogsFullAccess
+      Logging:
+        Destinations:
+        - CloudWatchLogsLogGroup:
+            LogGroupArn:
+              Fn::GetAtt:
+              - SAMLogs
+              - Arn
+        IncludeExecutionData: true
+        Level: ALL
+    Metadata:
+      SamResourceId: HelloStepFunctionExpressSync
+  HttpApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: AllowSFNExec
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action: states:StartSyncExecution
+            Resource:
+              Fn::GetAtt:
+              - HelloStepFunctionExpressSync
+              - Arn
+    Metadata:
+      SamResourceId: HttpApiRole
+  HelloFromLocalStepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://my-regional-bucket/0137bf7a13b1462183487f0b847ee164
+      Handler: helloWorld.lambda_handler
+      Runtime: python3.9
+    Metadata:
+      SamResourceId: HelloFromLocalStepFunction
+Outputs:
+  HelloAPIUrl:
+    Description: Gateway Http API URL
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/dev/
+  HelloStepFunctionExpressSyncArn:
+    Description: Step Functions
+    Value:
+      Ref: HelloStepFunctionExpressSync
+  HelloFromLocalStepFunction:
+    Description: Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - HelloFromLocalStepFunction
+      - Arn

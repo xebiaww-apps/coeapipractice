@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS SAM CLI Nested Stack for Auto Dependency Layer Creation
+Metadata:
+  SamCliInfo: 1.50.0
+  key: AWS SAM CLI sync command
+Outputs:
+  HelloFromLocalStepFunctionce095132DepLayer:
+    Value:
+      Ref: HelloFromLocalStepFunctionce095132DepLayer
+Resources:
+  HelloFromLocalStepFunctionce095132DepLayer:
+    Metadata:
+      CreatedBy: AWS SAM CLI sync command
+    Properties:
+      CompatibleRuntimes:
+      - python3.9
+      ContentUri: C:\Prabhu\AWS_SAM\sam-run-step-functions-remoteAWS\.aws-sam\auto-dependency-layer\HelloFromLocalStepFunctionce095132DepLayer
+      Description: Auto created layer for dependencies of function HelloFromLocalStepFunction
+      LayerName: testingae2b1fca-HelloFromLocalStepFuncce095132-DepLayer
+      RetentionPolicy: Delete
+    Type: AWS::Serverless::LayerVersion
+Transform: AWS::Serverless-2016-10-31

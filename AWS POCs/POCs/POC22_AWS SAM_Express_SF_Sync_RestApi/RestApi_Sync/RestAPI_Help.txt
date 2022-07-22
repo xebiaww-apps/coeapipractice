@@ -1,0 +1,73 @@
+
+Links:::::
+
+https://github.com/aws-samples
+
+Rest API Start Sync Execution:
+https://github.com/aws-samples/aws-step-functions-business-rules-orchestration
+
+=============================================================================================================
+1)
+
+Start local lambda endpoint:
+
+sam local start-lambda --host 192.168.0.103 --port 3001
+or
+sam local start-lambda
+
+PS C:\Prabhu\AWS_SAM\helloworld-SF-express-sync-exe-restapi> sam local start-lambda --host 192.168.0.108 --port 3001
+Starting the Local Lambda Service. You can now invoke your Lambda Functions defined in your template through the endpoint.
+2022-06-20 11:33:27  * Running on http://127.0.0.1:3001/ (Press CTRL+C to quit)
+
+
+
+---------------------------------------------------------
+========================================
+2)
+
+Open another cmd prompt:
+
+now start step function locally. Start the docker in cmd prompt in the project directory.
+
+Open localsettings.txt file and upate the wifi Router IP address:  192.168.0.108 of that time
+
+In command prompt:(Start the existing docker)
+
+
+C:\Prabhu\AWS_SAM\helloworld-SF-express-sync-exe-restapi>docker run -p 8083:8083 --env-file localSettings.txt amazon/aws-stepfunctions-local
+
+
+================================================
+3)
+
+PS C:\Prabhu\AWS_SAM\helloworld-SF-express-sync-exe-restapi> aws stepfunctions create-state-machine --endpoint http://192.168.0.103:8083 --definition file://statemachine/stateMachine.asl.json --name "HelloFromLocalStepFunctions" --role-arn "arn:aws:iam::644032760753:role/DummyRole"  
+
+
+Output:
+{
+    "stateMachineArn": "arn:aws:states:ap-south-1:644032760753:stateMachine:HelloFromLocalStepFunctions",
+    "creationDate": "2022-07-18T12:34:54.866000+05:30"
+}
+
+=============================================================================================
+
+3) run the step function locally
+
+PS C:\Prabhu\AWS_SAM\helloworld-SF-express-sync-exe-restapi> aws stepfunctions --endpoint http://192.168.0.103:8083 start-execution --state-machine-arn "arn:aws:states:ap-south-1:644032760753:stateMachine:HelloFromLocalStepFunctions" --name test1
+
+Output:
+{
+    "executionArn": "arn:aws:states:ap-south-1:644032760753:execution:HelloFromLocalStepFunctions:ff8f4275-9242-4cef-a160-207c65af650c",
+    "startDate": "2022-07-18T12:54:41.612000+05:30"
+}
+
+==================================================================================
+
+3) Verify using describe execution:
+
+C:\Prabhu\AWS_SAM\helloworld-SF-express-sync-exe-restapi> aws stepfunctions --endpoint http://192.168.0.103:8083 describe-execution --execution-arn arn:aws:states:ap-south-1:644032760753:execution:HelloFromLocalStepFunctions:ff8f4275-9242-4cef-a160-207c65af650c
+
+
+=======================================================================================================
+======================================================================================================
+============================================================================================================

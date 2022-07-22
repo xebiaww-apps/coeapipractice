@@ -1,0 +1,176 @@
+\AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  javahome-app
+  Sample SAM Template for javahome-app
+##########################################################################
+#  Globals                                                  #
+##########################################################################
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+
+Resources:
+  SAMLogs:
+    Type: AWS::Logs::LogGroup
+
+  ##########################################################################
+  #  Lambda function and IAM role                                                      #
+  ##########################################################################
+  HelloFromLocalStepFunctionLambdaIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:  
+      RoleName: HelloFromLocalStepFunctionLambdaIamRole     
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: ["sts:AssumeRole"]
+    
+  HelloFromLocalStepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-lambdaFunction
+      CodeUri: functions/HelloSF/
+      Handler: helloWorld.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt HelloFromLocalStepFunctionLambdaIamRole.Arn
+
+  ##########################################################################
+  #   STEP FUNCTION                                                        #
+  ##########################################################################  
+  #   STEP FUNCTION IAM role
+  StateExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: StateExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: !Sub states.${AWS::Region}.amazonaws.com
+          Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: VisualEditor0
+                Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: "*"
+              - Sid: VisualEditor1
+                Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+              - Sid: VisualEditor2
+                Effect: Allow
+                Action: "states:*"
+                Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine"
+              - Sid: VisualEditor3
+                Effect: Allow
+                Action: "states:StartSyncExecution"
+                Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine"                
+  # Express Sync Step Function
+  HelloStepFunctionExpressSync:
+    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    DependsOn: SAMLogs
+    Properties:
+      Name: !Sub ${AWS::StackName}-state-machine
+      Type: EXPRESS
+      Tracing:
+        Enabled: true
+      DefinitionUri: statemachine/stateMachine.asl.json
+      DefinitionSubstitutions:
+        HelloFromLocalStepFunctionPath: !Ref HelloFromLocalStepFunction
+      Role: !GetAtt StateExecutionRole.Arn
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt SAMLogs.Arn
+        IncludeExecutionData: false
+        Level: ALL
+      Events:
+        ValidationApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /hello
+            RestApiId: !Ref RestApiSynchronousWorkflows
+##########################################################################
+#   Rest API Gateway Creation and its IAM role                                                              #
+##########################################################################
+  RestApiSynchronousWorkflows:
+    Type: AWS::Serverless::Api
+    DependsOn: ApiGatewayToStepFunctionsRole
+    Properties:
+      Name: helloworld
+      StageName: dev
+
+  ApiGatewayToStepFunctionsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: ApiGatewayToStepFunctionsRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+      - PolicyName: CallStepFunctions
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action:
+                - states:SendTaskSuccess
+                - states:ListStateMachines
+                - states:SendTaskFailure
+                - states:ListActivities
+                - states:SendTaskHeartbeat
+              Resource: "*"             
+            - Sid: VisualEditor1
+              Effect: Allow
+              Action: "states:*"
+              Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine"
+            - Sid: VisualEditor2
+              Effect: Allow
+              Action: "states:StartSyncExecution"
+              Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine"    
+##########################################################################
+#   Outputs                                                              #
+##########################################################################
+Outputs:
+  RestApiSynchronous:
+    Description: "Gateway Http API URL"
+    Value: !Sub https://${RestApiSynchronousWorkflows}.execute-api.${AWS::Region}.amazonaws.com/dev/
+  ApiGatewayToStepFunctionsRole:
+    Description: "Implicit IAM Role created for API GW"
+    Value: !GetAtt ApiGatewayToStepFunctionsRole.Arn
+  #  Step Function and iam role
+  HelloStepFunctionExpressSync:
+    Description: "Step Functions"
+    Value: !GetAtt HelloStepFunctionExpressSync.Arn
+  StateExecutionRole:
+    Description: "Implicit IAM Role created for HelloStepFunctionExpressSync Orchestration Step function"
+    Value: !GetAtt StateExecutionRole.Arn
+  # #  Lambda Function and iam role
+  HelloFromLocalStepFunction:
+    Description: "Lambda Function"
+    Value: !GetAtt HelloFromLocalStepFunction.Arn

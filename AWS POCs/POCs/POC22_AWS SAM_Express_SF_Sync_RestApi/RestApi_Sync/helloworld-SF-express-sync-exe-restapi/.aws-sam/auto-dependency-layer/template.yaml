@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'javahome-app Sample SAM Template for javahome-app
+
+  '
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+Resources:
+  SAMLogs:
+    Type: AWS::Logs::LogGroup
+  HelloFromLocalStepFunctionLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: HelloFromLocalStepFunctionLambdaIamRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+  HelloFromLocalStepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${AWS::StackName}-lambdaFunction
+      CodeUri: HelloFromLocalStepFunction
+      Handler: helloWorld.lambda_handler
+      Runtime: python3.9
+      Role:
+        Fn::GetAtt:
+        - HelloFromLocalStepFunctionLambdaIamRole
+        - Arn
+      Layers:
+      - Fn::GetAtt:
+        - AwsSamAutoDependencyLayerNestedStack
+        - Outputs.HelloFromLocalStepFunctionce095132DepLayer
+    Metadata:
+      SamResourceId: HelloFromLocalStepFunction
+  StateExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: StateExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              Fn::Sub: states.${AWS::Region}.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: StatesExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: VisualEditor0
+            Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: '*'
+          - Sid: VisualEditor1
+            Effect: Allow
+            Action:
+            - logs:CreateLogDelivery
+            - logs:GetLogDelivery
+            - logs:UpdateLogDelivery
+            - logs:DeleteLogDelivery
+            - logs:ListLogDeliveries
+            - logs:PutResourcePolicy
+            - logs:DescribeResourcePolicies
+            - logs:DescribeLogGroups
+            Resource: '*'
+          - Sid: VisualEditor2
+            Effect: Allow
+            Action: states:*
+            Resource:
+              Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine
+          - Sid: VisualEditor3
+            Effect: Allow
+            Action: states:StartSyncExecution
+            Resource:
+              Fn::Sub:
+              - arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine
+              - stateMachineName: ${AWS::StackName}-state-machine
+  HelloStepFunctionExpressSync:
+    Type: AWS::Serverless::StateMachine
+    DependsOn: SAMLogs
+    Properties:
+      Name:
+        Fn::Sub: ${AWS::StackName}-state-machine
+      Type: EXPRESS
+      Tracing:
+        Enabled: true
+      DefinitionUri: ..\..\statemachine\stateMachine.asl.json
+      DefinitionSubstitutions:
+        HelloFromLocalStepFunctionPath:
+          Ref: HelloFromLocalStepFunction
+      Role:
+        Fn::GetAtt:
+        - StateExecutionRole
+        - Arn
+      Logging:
+        Destinations:
+        - CloudWatchLogsLogGroup:
+            LogGroupArn:
+              Fn::GetAtt:
+              - SAMLogs
+              - Arn
+        IncludeExecutionData: false
+        Level: ALL
+      Events:
+        ValidationApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /hello
+            RestApiId:
+              Ref: RestApiSynchronousWorkflows
+  RestApiSynchronousWorkflows:
+    Type: AWS::Serverless::Api
+    DependsOn: ApiGatewayToStepFunctionsRole
+    Properties:
+      Name: helloworld
+      StageName: dev
+  ApiGatewayToStepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ApiGatewayToStepFunctionsRole
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: apigateway.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: CallStepFunctions
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Sid: VisualEditor0
+            Effect: Allow
+            Action:
+            - states:SendTaskSuccess
+            - states:ListStateMachines
+            - states:SendTaskFailure
+            - states:ListActivities
+            - states:SendTaskHeartbeat
+            Resource: '*'
+          - Sid: VisualEditor1
+            Effect: Allow
+            Action: states:*
+            Resource:
+              Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine
+          - Sid: VisualEditor2
+            Effect: Allow
+            Action: states:StartSyncExecution
+            Resource:
+              Fn::Sub: arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-state-machine
+  AwsSamAutoDependencyLayerNestedStack:
+    DeletionPolicy: Delete
+    Metadata:
+      CreatedBy: AWS SAM CLI sync command
+    Properties:
+      TemplateURL: C:\Prabhu\AWS_SAM\sam-run-step-functions-remoteAWS\.aws-sam\auto-dependency-layer\nested_template.yaml
+    Type: AWS::CloudFormation::Stack
+Outputs:
+  RestApiSynchronous:
+    Description: Gateway Http API URL
+    Value:
+      Fn::Sub: https://${RestApiSynchronousWorkflows}.execute-api.${AWS::Region}.amazonaws.com/dev/
+  ApiGatewayToStepFunctionsRole:
+    Description: Implicit IAM Role created for API GW
+    Value:
+      Fn::GetAtt:
+      - ApiGatewayToStepFunctionsRole
+      - Arn
+  HelloStepFunctionExpressSync:
+    Description: Step Functions
+    Value:
+      Fn::GetAtt:
+      - HelloStepFunctionExpressSync
+      - Arn
+  StateExecutionRole:
+    Description: Implicit IAM Role created for HelloStepFunctionExpressSync Orchestration
+      Step function
+    Value:
+      Fn::GetAtt:
+      - StateExecutionRole
+      - Arn
+  HelloFromLocalStepFunction:
+    Description: Lambda Function
+    Value:
+      Fn::GetAtt:
+      - HelloFromLocalStepFunction
+      - Arn

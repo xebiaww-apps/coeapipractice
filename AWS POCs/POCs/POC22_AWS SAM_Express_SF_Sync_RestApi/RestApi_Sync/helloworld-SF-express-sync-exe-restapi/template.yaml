@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  rule-orchestration-app
+
+  SAM Template for rule-orchestration-app
+
+Globals:
+  Function:
+    Timeout: 3
+
+# Mappings:  
+#   StepFunctionsNames:    
+#     HelloWorldStateMachine:      
+#       "Name": "Rule-Orchestration-State-Machine"
+
+Resources:
+
+  SAMLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName : /aws/vendedlogs/states/SAMLogs2
+
+  ##########################################################################
+  #  Lambda function and IAM role                                                      #
+  ##########################################################################
+  HelloWorldLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/HelloSF/
+      Handler: helloWorld.lambda_handler
+      Runtime: python3.9
+      Description: A function that executes the ruleset exposed by Drools spring boot container 
+      Role: !GetAtt HelloWorldLambdaFunctionIamRole.Arn
+
+  HelloWorldLambdaFunctionIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'        
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action: "sts:AssumeRole"
+
+  ##########################################################################
+  #   STATE MACHINE                                                        #
+  ##########################################################################  
+  # Express Sync Step Function
+
+  HelloWorldStateMachine:
+      Type: AWS::Serverless::StateMachine
+      #DependsOn: RuleStateMachineLogGroup
+      Properties:
+        DefinitionUri: statemachine/stateMachine.asl.json      
+        DefinitionSubstitutions:
+          HelloFromLocalStepFunctionPath: !Ref HelloWorldLambdaFunction       
+        Role:
+          Fn::GetAtt: [ HelloWorldStateMachineIamRole, Arn ]
+        Type: EXPRESS
+        Logging:
+          Destinations:
+            - CloudWatchLogsLogGroup:
+                LogGroupArn: !GetAtt SAMLogs.Arn
+          IncludeExecutionData: false
+          Level: ALL
+        Events: 
+          ExecuteRuleSetApiEvent:
+            Type: Api
+            Properties:
+              Method: POST
+              Path: /hello
+              RestApiId:  !Ref ExecuteRuleSetApi
+
+  HelloWorldStateMachineIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+  
+  # RuleStateMachineLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Join [ "/", [ "stepfunctions", !FindInMap [ StepFunctionsNames, HelloWorldStateMachine, Name ]]]
+
+##########################################################################
+#   Rest API Gateway Creation and its IAM role                                                              #
+##########################################################################
+
+  ExecuteRuleSetApi:
+    Type: AWS::Serverless::Api
+    DependsOn: APIGWRole
+    Properties:
+      StageName: Dev
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          version: "1.0"
+          title: "helloworld"
+        basePath: "/dev"
+        schemes:
+        - "https"
+        paths:
+          /test:
+            post:
+              consumes:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                "400":
+                  description: "400 response"
+              x-amazon-apigateway-integration:
+                type: "aws"
+                credentials: !GetAtt APIGWRole.Arn
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:ap-south-1:states:action/StartSyncExecution"
+                responses:
+                  "200":
+                    statusCode: "200"
+                    responseTemplates : 
+                      application/json" : !Sub "#set ($inputRoot = $input.path('$')) { \"response\" : $inputRoot.output }"                    
+                  "400":
+                    statusCode: "400"
+                requestTemplates: 
+                  application/json: !Sub "{\"input\": \"$util.escapeJavaScript($input.json('$'))\"\
+                    , \"stateMachineArn\": \"${HelloWorldStateMachine.Arn}\"\
+                    }"
+                passthroughBehavior: "when_no_match"
+
+  APIGWRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: StateFnExecution
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "states:StartSyncExecution"
+                Resource: !GetAtt HelloWorldStateMachine.Arn
+
+
+Outputs: 
+  HelloWorldLambdaFunction:
+    Description: "Execute Business Rules Lambda Function ARN"
+    Value: !GetAtt HelloWorldLambdaFunction.Arn
+  HelloWorldLambdaFunctionIamRole:
+    Description: "Implicit IAM Role created for Execute Business Rules function"
+    Value: !GetAtt HelloWorldLambdaFunctionIamRole.Arn
+
+  HelloWorldStateMachine:
+    Description: "Business Rules Orchestration Step function ARN"
+    Value: !GetAtt HelloWorldStateMachine.Arn
+  HelloWorldStateMachineIamRole:
+    Description: "Implicit IAM Role created for Business Rules Orchestration Step function"
+    Value: !GetAtt HelloWorldStateMachineIamRole.Arn
+
+
+  ExecuteRuleSetApi:
+    Description: "Business Rules Orchestration API endpoint URL"
+    Value: !Sub "https://${ExecuteRuleSetApi}.execute-api.${AWS::Region}.amazonaws.com/dev/ExecuteRuleSet/"
+  APIGWRole:
+    Description: "Implicit IAM Role created for API GW"
+    Value: !GetAtt APIGWRole.Arn

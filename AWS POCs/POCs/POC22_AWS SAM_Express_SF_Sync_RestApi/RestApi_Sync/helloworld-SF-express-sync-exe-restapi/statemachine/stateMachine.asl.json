@@ -1,0 +1,14 @@
+{
+    "StartAt": "HelloSF",
+    "Comment": "Run the HelloWorld Lambda",
+    "States" :{
+        "HelloSF": {
+            "Type" : "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+                "FunctionName": "${HelloFromLocalStepFunctionPath}"
+              },
+            "End" : true
+        }
+    }
+}

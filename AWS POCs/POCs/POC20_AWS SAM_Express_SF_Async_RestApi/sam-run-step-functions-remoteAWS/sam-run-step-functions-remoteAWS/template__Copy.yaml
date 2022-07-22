@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  javahome-app
+  Sample SAM Template for javahome-app
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+
+Resources:
+  HelloFromLocalStepFunction:
+    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Properties:
+      DefinitionUri: statemachine/stateMachine.asl.json
+      DefinitionSubstitutions: 
+        HelloFromLocalStepFunctionArn: !GetAtt 'HelloFromLocalStepFunction.Arn'
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref HelloFromLocalLambda
+      
+
+  HelloFromLocalLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: HelloSF/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !Sub ${LambdaServiceRole.Arn}
+      Architectures:
+        - x86_64
+      Events:
+        HelloFromLocalStepFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /HelloSF
+            Method: get
+    #Metadata:
+      #SamResourceId: HelloFromLocalStepFunction
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+        StageName: prod
+        DefinitionBody:
+            swagger: "2.0"
+            info:
+                title: 
+                Ref: AWS::StackName
+                description: My API that uses custom authorizer
+                version: 1.0.0
+            paths:
+                /hello:
+                    get:
+                        consumes: application/json
+
+  LambdaServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      #Path: !Join ["", ["/", !Ref "AWS::StackName", "/"]]
+      ManagedPolicyArns:
+            - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+            - "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
+      AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+                -
+                    Sid: "AllowLambdaServiceToAssumeRole"
+                    Effect: "Allow"
+                    Action: 
+                        - "sts:AssumeRole"
+                    Principal:
+                        Service:
+                          - "lambda.amazonaws.com"
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloFromLocalStepFunctionAPI:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  HelloFromLocalStepFunction:
+    Description: "Hello local Step Function execution"
+    Value: !GetAtt HelloFromLocalStepFunction
+  HelloFromLocalStepFunctionArn:
+    Description: "Hello local Step Function execution ARN"
+    Value: !GetAtt HelloFromLocalStepFunction.Arn
+  HelloFromLocalStepFunctionIAMRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloFromLocalStepFunctionRole.Arn
+  HelloFromLocalLambda:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloFromLocalLambda.Arn
+  HelloFromLocalLambdaIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloWorldLocalLambdaFunctionRole.Arn
